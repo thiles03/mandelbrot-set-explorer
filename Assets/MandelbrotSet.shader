@@ -5,6 +5,10 @@
         _MainTex ("Texture", 2D) = "white" {}
         _Area("Area", vector) = (0, 0, 4, 4)
             _Angle("Angle", range(-3.1415, 3.1415)) = 0
+            _MaxIter("Max Iterations", range(4, 1000)) = 255
+            _Colour("Colour", range(0, 1)) = .5
+            _Repeat("Repeat", float) = 1
+            _Speed("Speed", float) = 1
     }
     SubShader
     {
@@ -40,7 +44,7 @@
             }
 
             float4 _Area;
-            float _Angle;
+            float _Angle, _MaxIter, _Colour, _Repeat, _Speed;
             sampler2D _MainTex;
 
             float2 rot(float2 p, float2 pivot, float a) {
@@ -54,16 +58,42 @@
 
             fixed4 frag(v2f i) : SV_Target
             {
-                float2 c = _Area.xy + (i.uv-0.5)*_Area.zw;
+                float2 uv = i.uv - .5;
+                //uv = abs(uv);
+                float2 c = _Area.xy + uv*_Area.zw;
                 c = rot(c, _Area.xy, _Angle);
-                float2 z;
-                float iterator;
-                for (iterator = 0; iterator < 255; iterator++)
+
+                float r = 50;
+                float r2 = r * r;
+
+                float2 z, zPrev;
+                float iter;
+
+                for (iter = 0; iter < _MaxIter; iter++)
                 {
+                    zPrev = rot(z, 0, _Time.y);
                     z = float2(z.x*z.x - z.y*z.y, 2*z.x*z.y) + c;
-                    if (length(z) > 2) break;
+                    if (dot(z, zPrev) > r2) break;
                 }
-                return iterator/255;
+                if (iter >= _MaxIter) return 0;
+
+                float dist = length(z);
+                float fractIter = (dist - r) / (r2 - r);
+                fractIter = (log2(log(dist) / log(r)));
+
+                //iter -= fractIter;
+
+                float m = sqrt(iter / _MaxIter);
+                float4 col;
+                //col = sin(float4(.3, .67, .76, 1)*m*20)*.5+.5;
+                col = tex2D(_MainTex, float2(m*_Repeat + _Time.y*_Speed, _Colour));
+
+                float angle = atan2(z.x, z.y);
+
+                col *= smoothstep(3, 0, fractIter);
+
+                col *= 1+sin(angle * 2+ _Time.y*4)*.2;
+                return col;
             }
             ENDCG
         }
