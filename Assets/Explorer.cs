@@ -57,7 +57,7 @@ public class Explorer : MonoBehaviour
         Vector2 dir = new Vector2(.01f * scale, 0);
         float s = Mathf.Sin(angle);
         float c = Mathf.Cos(angle);
-        dir = new Vector2(dir.x * c - dir.y * s, dir.x * s + dir.y * c);
+        dir = new Vector2(dir.x * c, dir.x * s);
 
         if (Input.GetKey(KeyCode.A))
         {
