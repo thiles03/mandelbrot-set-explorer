@@ -3,6 +3,7 @@
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _Area( "Area", vector) = (0, 0, 4, 4)
     }
     SubShader
     {
@@ -37,14 +38,20 @@
                 return o;
             }
 
+            float4 _Area;
             sampler2D _MainTex;
 
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv);
-                // just invert the colors
-                col.rgb = 1 - col.rgb;
-                return col;
+                float2 c = _Area.xy + (i.uv-0.5)*_Area.zw;
+                float2 z;
+                float iterator;
+                for (iterator = 0; iterator < 255; iterator++)
+                {
+                    z = float2(z.x*z.x - z.y*z.y, 2*z.x*z.y) + c;
+                    if (length(z) > 2) break;
+                }
+                return iterator/255;
             }
             ENDCG
         }
